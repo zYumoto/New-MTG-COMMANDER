@@ -26,57 +26,46 @@ export default function Register() {
     }
   }
 
-  return (
-    <div style={styles.wrap}>
-      <form onSubmit={onSubmit} style={styles.card}>
-        <h2 style={styles.h2}>Criar conta</h2>
+return (
+  <div className="auth-background">
+    <form onSubmit={onSubmit} className="auth-card">
+      <h2 className="auth-title">Criar Conta</h2>
 
-        <label style={styles.label}>Username</label>
-        <input
-          style={styles.input}
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          placeholder="Victor"
-        />
+      <label className="auth-label">Username</label>
+      <input
+        className="auth-input"
+        value={username}
+        onChange={(e) => setUsername(e.target.value)}
+        placeholder="Victor"
+      />
 
-        <label style={styles.label}>E-mail</label>
-        <input
-          style={styles.input}
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="seu@email.com"
-        />
+      <label className="auth-label">E-mail</label>
+      <input
+        className="auth-input"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        placeholder="seu@email.com"
+      />
 
-        <label style={styles.label}>Senha</label>
-        <input
-          style={styles.input}
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="••••••"
-        />
+      <label className="auth-label">Senha</label>
+      <input
+        className="auth-input"
+        type="password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        placeholder="••••••"
+      />
 
-        {error && <p style={styles.error}>{error}</p>}
+      {error && <p className="auth-error">{error}</p>}
 
-        <button style={styles.btn} disabled={loading}>
-          {loading ? "Criando..." : "Criar conta"}
-        </button>
+      <button className="auth-button" disabled={loading}>
+        {loading ? "Criando..." : "Criar conta"}
+      </button>
 
-        <p style={styles.p}>
-          Já tem conta? <Link to="/login">Fazer login</Link>
-        </p>
-      </form>
-    </div>
-  );
+      <div className="auth-footer">
+        Já tem conta? <Link to="/login">Fazer login</Link>
+      </div>
+    </form>
+  </div>
+);
 }
-
-const styles = {
-  wrap: { minHeight: "100vh", display: "grid", placeItems: "center", padding: 16 },
-  card: { width: "100%", maxWidth: 420, border: "1px solid #333", borderRadius: 12, padding: 16 },
-  h2: { marginTop: 0 },
-  label: { display: "block", marginTop: 12, marginBottom: 6 },
-  input: { width: "100%", padding: 10, borderRadius: 10, border: "1px solid #444" },
-  btn: { width: "100%", marginTop: 16, padding: 10, borderRadius: 10, cursor: "pointer" },
-  error: { color: "tomato", marginTop: 10 },
-  p: { marginTop: 14 },
-};

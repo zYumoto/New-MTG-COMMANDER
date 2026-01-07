@@ -1,73 +1,70 @@
-import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
-export default function Login() {
-  const nav = useNavigate();
-  const { login } = useAuth();
+export default function Lobby() {
+  const { user, logout } = useAuth();
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  async function onSubmit(e) {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
-    try {
-      await login(email, password);
-      nav("/lobby");
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  }
+  // mock (por enquanto) — depois vem do backend
+  const rooms = [
+    { id: "1", name: "Mesa do Caos", owner: "nick", players: "1/4", locked: false },
+    { id: "2", name: "Commander Night", owner: "nick", players: "1/2", locked: false },
+    { id: "3", name: "Tryhard", owner: "nick", players: "1/3", locked: false },
+    { id: "4", name: "Fechada", owner: "nick", players: "1/4", locked: true },
+  ];
 
   return (
-    <div style={styles.wrap}>
-      <form onSubmit={onSubmit} style={styles.card}>
-        <h2 style={styles.h2}>Login</h2>
+    <div className="page-shell">
+      <div className="lobby-shell">
+        {/* Top title */}
+        <div className="lobby-top-title">LOBBY</div>
 
-        <label style={styles.label}>E-mail</label>
-        <input
-          style={styles.input}
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="seu@email.com"
-        />
+        <div className="lobby-grid">
+          {/* LEFT MAIN */}
+          <section className="panel panel-main">
+            <div className="panel-header">
+              <div className="pill-title">Lobby</div>
+            </div>
 
-        <label style={styles.label}>Senha</label>
-        <input
-          style={styles.input}
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="••••••"
-        />
+            <div className="lobby-actions">
+              <input className="input" placeholder="Pesquisar sala" />
+              <button className="btn">Criar Sala</button>
+            </div>
 
-        {error && <p style={styles.error}>{error}</p>}
+            <div className="rooms-grid">
+              {rooms.map((r) => (
+                <div key={r.id} className="room-card">
+                  <div className="room-title">
+                    SALA: <span>{r.name}</span>
+                  </div>
+                  <div className="room-sub">dono: {r.owner}</div>
+                  <div className="room-sub">{r.players}</div>
 
-        <button style={styles.btn} disabled={loading}>
-          {loading ? "Entrando..." : "Entrar"}
-        </button>
+                  {r.locked && <div className="room-lock" title="Sala bloqueada">🔒</div>}
+                </div>
+              ))}
+            </div>
+          </section>
 
-        <p style={styles.p}>
-          Não tem conta? <Link to="/register">Criar agora</Link>
-        </p>
-      </form>
+          {/* RIGHT SIDEBAR */}
+          <aside className="panel panel-side">
+            <div className="profile-row">
+              <div className="avatar">FOTO</div>
+              <div className="nickname">{user?.username || "NICKNAME"}</div>
+            </div>
+
+            <button className="btn btn-secondary">Meus Decks</button>
+
+            <div className="friends-box">
+              <div className="friends-title">Amigos</div>
+              <div className="friends-empty">Sem amigos carregados (por enquanto)</div>
+            </div>
+
+            <button className="btn btn-ghost">Configurações</button>
+            <button className="btn btn-danger" onClick={logout}>Sair</button>
+
+            <div className="small-muted">logado: {user?.email}</div>
+          </aside>
+        </div>
+      </div>
     </div>
   );
 }
-
-const styles = {
-  wrap: { minHeight: "100vh", display: "grid", placeItems: "center", padding: 16 },
-  card: { width: "100%", maxWidth: 420, border: "1px solid #333", borderRadius: 12, padding: 16 },
-  h2: { marginTop: 0 },
-  label: { display: "block", marginTop: 12, marginBottom: 6 },
-  input: { width: "100%", padding: 10, borderRadius: 10, border: "1px solid #444" },
-  btn: { width: "100%", marginTop: 16, padding: 10, borderRadius: 10, cursor: "pointer" },
-  error: { color: "tomato", marginTop: 10 },
-  p: { marginTop: 14 },
-};

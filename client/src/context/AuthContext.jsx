@@ -17,6 +17,16 @@ export function AuthProvider({ children }) {
     localStorage.setItem("user", JSON.stringify(nextUser));
   }
 
+  function updateUser(partial) {
+    setUser((prev) => {
+      const next = { ...(prev || {}), ...(partial || {}) };
+      localStorage.setItem("user", JSON.stringify(next));
+      return next;
+    });
+  }
+
+
+
   function logout() {
     setToken("");
     setUser(null);
@@ -35,10 +45,10 @@ export function AuthProvider({ children }) {
   }
 
   // Se quiser validar token depois com /me, a gente adiciona aqui
-  useEffect(() => {}, [token]);
+  useEffect(() => { }, [token]);
 
   const value = useMemo(
-    () => ({ token, user, isAuth: !!token, login, register, logout }),
+    () => ({ token, user, isAuth: !!token, login, register, logout, updateUser }),
     [token, user]
   );
 

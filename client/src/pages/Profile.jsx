@@ -5,8 +5,8 @@ import { apiGet, apiPut } from "../services/api";
 import EditProfileModal from "../components/EditProfileModal";
 
 export default function Profile() {
-  const { token } = useAuth();
   const nav = useNavigate();
+  const { token, updateUser } = useAuth();
 
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -39,6 +39,13 @@ export default function Profile() {
     try {
       const data = await apiPut("/api/users/me", payload, token);
       setProfile(data.user);
+
+      updateUser({
+        avatarUrl: data.user.avatarUrl,
+        avatarData: data.user.avatarData,
+        bio: data.user.bio,
+        profileBgUrl: data.user.profileBgUrl
+      });
     } catch (err) {
       alert(err.message);
     }

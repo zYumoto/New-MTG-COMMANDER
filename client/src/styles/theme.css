@@ -810,3 +810,11 @@ body {
   border-radius: 999px;
   font-weight: 700;
 }
+
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+  display: block;
+}

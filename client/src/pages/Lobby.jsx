@@ -1,21 +1,37 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import CreateRoomModal from "../components/CreateRoomModal";
 import { apiGet, apiPost } from "../services/api";
-import { useNavigate } from "react-router-dom";
-
 
 export default function Lobby() {
+  const nav = useNavigate();
   const { user, token, logout } = useAuth();
 
+  // Perfil real do backend (pra avatar/bio/etc)
+  const [me, setMe] = useState(null);
+
+  // Salas
   const [rooms, setRooms] = useState([]);
   const [loadingRooms, setLoadingRooms] = useState(true);
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const nav = useNavigate();
 
+  // Modal criar sala
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
 
   // =========================
-  // Carregar salas do backend
+  // Carregar perfil (me)
+  // =========================
+  async function loadMe() {
+    try {
+      const data = await apiGet("/api/users/me", token);
+      setMe(data.user);
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  // =========================
+  // Carregar salas
   // =========================
   async function loadRooms() {
     setLoadingRooms(true);
@@ -31,6 +47,7 @@ export default function Lobby() {
   }
 
   useEffect(() => {
+    loadMe();
     loadRooms();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -38,14 +55,17 @@ export default function Lobby() {
   // =========================
   // Criar sala
   // =========================
-  async function handleCreateRoom(data) {
+  async function handleCreateRoom(payload) {
     try {
-      await apiPost("/api/rooms", data, token);
-      await loadRooms(); // atualiza lista após criar
+      await apiPost("/api/rooms", payload, token);
+      await loadRooms();
     } catch (err) {
       alert(err.message);
+      throw err;
     }
   }
+
+  const avatarSrc = me?.avatarData || me?.avatarUrl || "";
 
   return (
     <>
@@ -88,9 +108,7 @@ export default function Lobby() {
                         SALA: <span>{room.name}</span>
                       </div>
 
-                      <div className="room-sub">
-                        dono: {room.ownerUsername}
-                      </div>
+                      <div className="room-sub">dono: {room.ownerUsername}</div>
 
                       <div className="room-sub">
                         {room.playersCount}/{room.maxPlayers}
@@ -109,42 +127,40 @@ export default function Lobby() {
 
             {/* ================= SIDEBAR ================= */}
             <aside className="panel panel-side">
-              {/* Perfil */}
+              {/* Perfil (clicável) */}
               <div
                 className="profile-row profile-click"
                 onClick={() => nav("/profile")}
                 title="Abrir perfil"
               >
-                <div className="avatar">FOTO</div>
-                <div className="nickname">{user?.username || "Nickname"}</div>
+                <div className="avatar" style={{ overflow: "hidden" }}>
+                  {avatarSrc ? (
+                    <img src={avatarSrc} alt="avatar" className="avatar-img" />
+                  ) : (
+                    "FOTO"
+                  )}
+                </div>
+
+                <div className="nickname">
+                  {me?.username || user?.username || "Nickname"}
+                </div>
               </div>
 
-              <button className="btn btn-secondary">
-                Meus Decks
-              </button>
+              <button className="btn btn-secondary">Meus Decks</button>
 
               {/* Amigos */}
               <div className="friends-box">
                 <div className="friends-title">Amigos</div>
-                <div className="friends-empty">
-                  Nenhum amigo online
-                </div>
+                <div className="friends-empty">Nenhum amigo online</div>
               </div>
 
-              <button className="btn btn-ghost">
-                Configurações
-              </button>
+              <button className="btn btn-ghost">Configurações</button>
 
-              <button
-                className="btn btn-danger"
-                onClick={logout}
-              >
+              <button className="btn btn-danger" onClick={logout}>
                 Sair
               </button>
 
-              <div className="small-muted">
-                {user?.email}
-              </div>
+              <div className="small-muted">{me?.email || user?.email}</div>
             </aside>
           </div>
         </div>

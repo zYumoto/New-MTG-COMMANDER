@@ -1,70 +1,155 @@
+import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import CreateRoomModal from "../components/CreateRoomModal";
+import { apiGet, apiPost } from "../services/api";
 
 export default function Lobby() {
-  const { user, logout } = useAuth();
+  const { user, token, logout } = useAuth();
 
-  // mock (por enquanto) — depois vem do backend
-  const rooms = [
-    { id: "1", name: "Mesa do Caos", owner: "nick", players: "1/4", locked: false },
-    { id: "2", name: "Commander Night", owner: "nick", players: "1/2", locked: false },
-    { id: "3", name: "Tryhard", owner: "nick", players: "1/3", locked: false },
-    { id: "4", name: "Fechada", owner: "nick", players: "1/4", locked: true },
-  ];
+  const [rooms, setRooms] = useState([]);
+  const [loadingRooms, setLoadingRooms] = useState(true);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+
+  // =========================
+  // Carregar salas do backend
+  // =========================
+  async function loadRooms() {
+    setLoadingRooms(true);
+    try {
+      const data = await apiGet("/api/rooms", token);
+      setRooms(data.rooms || []);
+    } catch (err) {
+      console.error(err);
+      alert(err.message);
+    } finally {
+      setLoadingRooms(false);
+    }
+  }
+
+  useEffect(() => {
+    loadRooms();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // =========================
+  // Criar sala
+  // =========================
+  async function handleCreateRoom(data) {
+    try {
+      await apiPost("/api/rooms", data, token);
+      await loadRooms(); // atualiza lista após criar
+    } catch (err) {
+      alert(err.message);
+    }
+  }
 
   return (
-    <div className="page-shell">
-      <div className="lobby-shell">
-        {/* Top title */}
-        <div className="lobby-top-title">LOBBY</div>
+    <>
+      <div className="page-shell">
+        <div className="lobby-shell">
+          {/* Título topo */}
+          <div className="lobby-top-title">LOBBY</div>
 
-        <div className="lobby-grid">
-          {/* LEFT MAIN */}
-          <section className="panel panel-main">
-            <div className="panel-header">
-              <div className="pill-title">Lobby</div>
-            </div>
+          <div className="lobby-grid">
+            {/* ================= MAIN ================= */}
+            <section className="panel panel-main">
+              <div className="panel-header">
+                <div className="pill-title">Lobby</div>
+              </div>
 
-            <div className="lobby-actions">
-              <input className="input" placeholder="Pesquisar sala" />
-              <button className="btn">Criar Sala</button>
-            </div>
+              {/* Ações */}
+              <div className="lobby-actions">
+                <input className="input" placeholder="Pesquisar sala" />
+                <button className="btn" onClick={() => setIsCreateOpen(true)}>
+                  Criar Sala
+                </button>
+              </div>
 
-            <div className="rooms-grid">
-              {rooms.map((r) => (
-                <div key={r.id} className="room-card">
-                  <div className="room-title">
-                    SALA: <span>{r.name}</span>
-                  </div>
-                  <div className="room-sub">dono: {r.owner}</div>
-                  <div className="room-sub">{r.players}</div>
+              {/* Lista de salas */}
+              <div className="rooms-grid">
+                {loadingRooms ? (
+                  <div style={{ opacity: 0.8 }}>Carregando salas...</div>
+                ) : rooms.length === 0 ? (
+                  <div style={{ opacity: 0.8 }}>Nenhuma sala criada ainda.</div>
+                ) : (
+                  rooms.map((room) => (
+                    <div
+                      key={room.id}
+                      className={`room-card ${room.isPrivate ? "is-locked" : ""}`}
+                      onClick={() => {
+                        alert(`Entrar na sala: ${room.name} (em breve)`);
+                      }}
+                    >
+                      <div className="room-title">
+                        SALA: <span>{room.name}</span>
+                      </div>
 
-                  {r.locked && <div className="room-lock" title="Sala bloqueada">🔒</div>}
+                      <div className="room-sub">
+                        dono: {room.ownerUsername}
+                      </div>
+
+                      <div className="room-sub">
+                        {room.playersCount}/{room.maxPlayers}
+                      </div>
+
+                      {room.isPrivate && (
+                        <div className="room-lock" title="Sala privada">
+                          🔒
+                        </div>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            </section>
+
+            {/* ================= SIDEBAR ================= */}
+            <aside className="panel panel-side">
+              {/* Perfil */}
+              <div className="profile-row">
+                <div className="avatar">FOTO</div>
+                <div className="nickname">
+                  {user?.username || "Nickname"}
                 </div>
-              ))}
-            </div>
-          </section>
+              </div>
 
-          {/* RIGHT SIDEBAR */}
-          <aside className="panel panel-side">
-            <div className="profile-row">
-              <div className="avatar">FOTO</div>
-              <div className="nickname">{user?.username || "NICKNAME"}</div>
-            </div>
+              <button className="btn btn-secondary">
+                Meus Decks
+              </button>
 
-            <button className="btn btn-secondary">Meus Decks</button>
+              {/* Amigos */}
+              <div className="friends-box">
+                <div className="friends-title">Amigos</div>
+                <div className="friends-empty">
+                  Nenhum amigo online
+                </div>
+              </div>
 
-            <div className="friends-box">
-              <div className="friends-title">Amigos</div>
-              <div className="friends-empty">Sem amigos carregados (por enquanto)</div>
-            </div>
+              <button className="btn btn-ghost">
+                Configurações
+              </button>
 
-            <button className="btn btn-ghost">Configurações</button>
-            <button className="btn btn-danger" onClick={logout}>Sair</button>
+              <button
+                className="btn btn-danger"
+                onClick={logout}
+              >
+                Sair
+              </button>
 
-            <div className="small-muted">logado: {user?.email}</div>
-          </aside>
+              <div className="small-muted">
+                {user?.email}
+              </div>
+            </aside>
+          </div>
         </div>
       </div>
-    </div>
+
+      {/* ================= MODAL ================= */}
+      <CreateRoomModal
+        open={isCreateOpen}
+        onClose={() => setIsCreateOpen(false)}
+        onCreate={handleCreateRoom}
+      />
+    </>
   );
 }

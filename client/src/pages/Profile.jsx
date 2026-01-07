@@ -1,11 +1,12 @@
-// client/src/pages/Profile.jsx
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { apiGet, apiPut } from "../services/api";
 import EditProfileModal from "../components/EditProfileModal";
 
 export default function Profile() {
   const { token } = useAuth();
+  const nav = useNavigate();
 
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -43,19 +44,36 @@ export default function Profile() {
     }
   }
 
-  const avatarSrc =
-    profile?.avatarData ||
-    profile?.avatarUrl ||
-    "";
+  async function changePassword(payload) {
+    try {
+      await apiPut("/api/users/password", payload, token);
+    } catch (err) {
+      alert(err.message);
+      throw err;
+    }
+  }
+
+  const avatarSrc = profile?.avatarData || profile?.avatarUrl || "";
 
   return (
     <>
       <div className="profile-bg" style={bgStyle}>
         <div className="profile-blur">
+          {/* Botão voltar */}
+          <div className="profile-back">
+            <button className="btn btn-ghost" onClick={() => nav("/lobby")}>
+              ← Voltar para o Lobby
+            </button>
+          </div>
+
           <div className="profile-card">
             <div className="profile-header">
               <div className="profile-avatar">
-                {avatarSrc ? <img src={avatarSrc} alt="avatar" /> : <div className="avatar-fallback">FOTO</div>}
+                {avatarSrc ? (
+                  <img src={avatarSrc} alt="avatar" />
+                ) : (
+                  <div className="avatar-fallback">FOTO</div>
+                )}
               </div>
 
               <div className="profile-info">
@@ -75,9 +93,7 @@ export default function Profile() {
                 {loading ? (
                   <div style={{ opacity: 0.8 }}>Carregando...</div>
                 ) : (
-                  <div style={{ opacity: 0.8 }}>
-                    Espaço separado pra decks públicos (em breve)
-                  </div>
+                  <div style={{ opacity: 0.8 }}>Espaço separado pra decks públicos (em breve)</div>
                 )}
               </div>
             </div>
@@ -90,6 +106,7 @@ export default function Profile() {
         onClose={() => setEditOpen(false)}
         initial={profile}
         onSave={saveProfile}
+        onChangePassword={changePassword}
       />
     </>
   );

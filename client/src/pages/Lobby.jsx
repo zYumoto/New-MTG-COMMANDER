@@ -1,15 +1,24 @@
+// client/src/pages/Lobby.jsx
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import CreateRoomModal from "../components/CreateRoomModal";
+import FriendsModal from "../components/FriendsModal";
 import { apiGet, apiPost } from "../services/api";
 
 export default function Lobby() {
   const nav = useNavigate();
   const { user, token, logout } = useAuth();
 
-  // Perfil real do backend (pra avatar/bio/etc)
+  // Perfil real do backend (avatar/bio/etc)
   const [me, setMe] = useState(null);
+
+  // Amigos (preview no lobby)
+  const [friendsPreview, setFriendsPreview] = useState([]);
+  const [loadingFriends, setLoadingFriends] = useState(true);
+
+  // Modal amigos
+  const [friendsOpen, setFriendsOpen] = useState(false);
 
   // Salas
   const [rooms, setRooms] = useState([]);
@@ -27,6 +36,21 @@ export default function Lobby() {
       setMe(data.user);
     } catch (err) {
       console.error(err);
+    }
+  }
+
+  // =========================
+  // Carregar amigos (preview)
+  // =========================
+  async function loadFriends() {
+    setLoadingFriends(true);
+    try {
+      const data = await apiGet("/api/friends", token);
+      setFriendsPreview(data.friends || []);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingFriends(false);
     }
   }
 
@@ -49,6 +73,14 @@ export default function Lobby() {
   useEffect(() => {
     loadMe();
     loadRooms();
+    loadFriends();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // (Opcional) atualizar status dos amigos automaticamente
+  useEffect(() => {
+    const id = setInterval(() => loadFriends(), 15000);
+    return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -148,11 +180,49 @@ export default function Lobby() {
 
               <button className="btn btn-secondary">Meus Decks</button>
 
-              {/* Amigos */}
-              <div className="friends-box">
+              {/* Amigos (abre modal + preview dentro) */}
+              <button
+                type="button"
+                className="friends-box friends-click"
+                onClick={() => setFriendsOpen(true)}
+                title="Abrir amigos"
+              >
                 <div className="friends-title">Amigos</div>
-                <div className="friends-empty">Nenhum amigo online</div>
-              </div>
+
+                <div className="friends-preview">
+                  {loadingFriends ? (
+                    <div className="friends-empty">Carregando...</div>
+                  ) : friendsPreview.length === 0 ? (
+                    <div className="friends-empty">Nenhum amigo ainda</div>
+                  ) : (
+                    friendsPreview.slice(0, 6).map((f) => {
+                      const a = f.avatarData || f.avatarUrl || "";
+                      return (
+                        <div key={f.id} className="friend-mini">
+                          <div className="friend-mini-avatar">
+                            {a ? (
+                              <img src={a} alt="avatar" />
+                            ) : (
+                              <div className="avatar-fallback">F</div>
+                            )}
+                          </div>
+
+                          <div className="friend-mini-name">{f.username}</div>
+
+                          <div className={`friend-mini-status ${String(f.status || "").toLowerCase()}`}>
+                            <span className="dot" />
+                            {f.status === "ONLINE"
+                              ? "Online"
+                              : f.status === "AWAY"
+                              ? "Ausente"
+                              : "Offline"}
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </button>
 
               <button className="btn btn-ghost">Configurações</button>
 
@@ -166,11 +236,17 @@ export default function Lobby() {
         </div>
       </div>
 
-      {/* ================= MODAL ================= */}
+      {/* ================= MODAIS ================= */}
       <CreateRoomModal
         open={isCreateOpen}
         onClose={() => setIsCreateOpen(false)}
         onCreate={handleCreateRoom}
+      />
+
+      <FriendsModal
+        open={friendsOpen}
+        onClose={() => setFriendsOpen(false)}
+        token={token}
       />
     </>
   );

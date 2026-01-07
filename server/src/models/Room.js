@@ -12,7 +12,7 @@ const RoomSchema = new mongoose.Schema(
     isPrivate: { type: Boolean, default: false },
     passwordHash: { type: String, default: "" },
 
-    // jogadores (por enquanto só lista de ids)
+    // jogadores 
     players: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
 
     // status

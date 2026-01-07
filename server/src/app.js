@@ -1,8 +1,10 @@
+// server/src/app.js
 import express from "express";
 import cors from "cors";
-import roomRoutes from "./routes/room.routes.js";
 
 import authRoutes from "./routes/auth.routes.js";
+import roomRoutes from "./routes/room.routes.js";
+import userRoutes from "./routes/user.routes.js";
 
 const app = express();
 
@@ -13,5 +15,6 @@ app.get("/health", (req, res) => res.json({ ok: true, service: "mtg-commander-ap
 
 app.use("/api/auth", authRoutes);
 app.use("/api/rooms", roomRoutes);
+app.use("/api/users", userRoutes);
 
 export default app;

@@ -6,6 +6,8 @@ import Register from "../pages/Register";
 import Lobby from "../pages/Lobby";
 import ProtectedRoute from "./ProtectedRoute";
 import PageTransition from "./PageTransition";
+import Profile from "../pages/Profile";
+
 
 export default function AnimatedRoutes() {
   const location = useLocation();
@@ -30,6 +32,18 @@ export default function AnimatedRoutes() {
             </PageTransition>
           }
         />
+
+        <Route
+          path="/profile"
+          element={
+            <PageTransition>
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            </PageTransition>
+          }
+        />
+
 
         <Route
           path="/register"

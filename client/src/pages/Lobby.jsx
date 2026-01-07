@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import CreateRoomModal from "../components/CreateRoomModal";
 import { apiGet, apiPost } from "../services/api";
+import { useNavigate } from "react-router-dom";
+
 
 export default function Lobby() {
   const { user, token, logout } = useAuth();
@@ -9,6 +11,8 @@ export default function Lobby() {
   const [rooms, setRooms] = useState([]);
   const [loadingRooms, setLoadingRooms] = useState(true);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const nav = useNavigate();
+
 
   // =========================
   // Carregar salas do backend
@@ -106,11 +110,13 @@ export default function Lobby() {
             {/* ================= SIDEBAR ================= */}
             <aside className="panel panel-side">
               {/* Perfil */}
-              <div className="profile-row">
+              <div
+                className="profile-row profile-click"
+                onClick={() => nav("/profile")}
+                title="Abrir perfil"
+              >
                 <div className="avatar">FOTO</div>
-                <div className="nickname">
-                  {user?.username || "Nickname"}
-                </div>
+                <div className="nickname">{user?.username || "Nickname"}</div>
               </div>
 
               <button className="btn btn-secondary">

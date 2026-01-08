@@ -1,4 +1,3 @@
-// client/src/pages/Lobby.jsx
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -178,7 +177,9 @@ export default function Lobby() {
                 </div>
               </div>
 
-              <button className="btn btn-secondary">Meus Decks</button>
+              <button className="btn btn-secondary" onClick={() => nav("/decks/new")}>
+                Meus Decks
+              </button>
 
               {/* Amigos (abre modal + preview dentro) */}
               <button
@@ -214,8 +215,8 @@ export default function Lobby() {
                             {f.status === "ONLINE"
                               ? "Online"
                               : f.status === "AWAY"
-                              ? "Ausente"
-                              : "Offline"}
+                                ? "Ausente"
+                                : "Offline"}
                           </div>
                         </div>
                       );

@@ -5,6 +5,7 @@ import authRoutes from "./routes/auth.routes.js";
 import roomRoutes from "./routes/room.routes.js";
 import userRoutes from "./routes/user.routes.js";
 import friendsRoutes from "./routes/friends.routes.js";
+import cardsRoutes from "./routes/cards.routes.js";
 
 const app = express();
 
@@ -18,6 +19,7 @@ app.use(
 );
 
 app.use(express.json({ limit: "2mb" }));
+app.use("/api/cards", cardsRoutes);
 
 app.get("/health", (req, res) => res.json({ ok: true, service: "mtg-commander-api" }));
 app.get("/api/friends/_ping", (req, res) => res.json({ ok: true }));

@@ -21,7 +21,7 @@ export default function DeckBuilder() {
   const [commander, setCommander] = useState(null);
   const [cards, setCards] = useState([]);
 
-  // Coleções (datalist)
+  // Coleções
   const [sets, setSets] = useState([]);
   const [setCode, setSetCode] = useState("");
 
@@ -30,10 +30,13 @@ export default function DeckBuilder() {
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
 
-  // Carregar coleção inteira (paginado)
+  // Carregar set (grid)
   const [setLoading, setSetLoading] = useState(false);
   const [setPage, setSetPage] = useState(1);
   const [setHasMore, setSetHasMore] = useState(false);
+
+  // Precon
+  const [preconLoading, setPreconLoading] = useState(false);
 
   const totalCards = useMemo(
     () => cards.reduce((s, c) => s + (c.qty || 0), 0),
@@ -90,7 +93,7 @@ export default function DeckBuilder() {
     });
   }
 
-  // Carregar sets
+  // carregar sets
   useEffect(() => {
     async function loadSets() {
       try {
@@ -103,7 +106,7 @@ export default function DeckBuilder() {
     loadSets();
   }, [token]);
 
-  // Busca live
+  // busca live
   useEffect(() => {
     if (!searchQ.trim()) {
       setSearchResults([]);
@@ -159,6 +162,36 @@ export default function DeckBuilder() {
     }
   }
 
+  async function setPreconFromChosenSet() {
+    if (!setCode.trim()) return alert("Escolha uma coleção primeiro.");
+
+    setPreconLoading(true);
+    try {
+      const data = await apiGet(`/api/cards/precon/${encodeURIComponent(setCode.trim())}`, token);
+
+      if (data?.set?.name) setDeckName(data.set.name);
+
+      setCommander(data.commander || null);
+
+      const imported = (data.cards || []).map((c) => ({
+        ...c,
+        qty: 1,
+      }));
+
+      setCards(imported);
+
+      setSearchResults([...(data.commander ? [data.commander] : []), ...imported]);
+      setSearchQ("");
+      setSetHasMore(false);
+      setSetPage(1);
+    } catch (err) {
+      console.error(err);
+      alert(err.message);
+    } finally {
+      setPreconLoading(false);
+    }
+  }
+
   return (
     <div className="page-shell">
       <div className="lobby-shell">
@@ -167,11 +200,7 @@ export default function DeckBuilder() {
         <div className="deck-shell panel">
           <div className="deck-top">
             <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-              <button
-                type="button"
-                className="btn btn-ghost"
-                onClick={() => nav("/lobby")}
-              >
+              <button type="button" className="btn btn-ghost" onClick={() => nav("/lobby")}>
                 ← Voltar pro Lobby
               </button>
 
@@ -203,11 +232,7 @@ export default function DeckBuilder() {
             <section className="deck-left">
               <div className="deck-name-row">
                 <div className="small-muted">MEU DECK:</div>
-                <input
-                  className="input"
-                  value={deckName}
-                  onChange={(e) => setDeckName(e.target.value)}
-                />
+                <input className="input" value={deckName} onChange={(e) => setDeckName(e.target.value)} />
                 <div className="small-muted">{totalCards}/99</div>
               </div>
 
@@ -220,30 +245,20 @@ export default function DeckBuilder() {
                       {commander?.image ? (
                         <img src={commander.image} alt="commander" />
                       ) : (
-                        <div className="slot-text">
-                          ESPAÇO RESERVADO
-                          <br />
-                          COMANDANTE
-                        </div>
+                        <div className="slot-text">ESPAÇO RESERVADO<br />COMANDANTE</div>
                       )}
                     </div>
                   </div>
 
                   <div className="deck-slot-actions">
-                    <CardAutocomplete
-                      token={token}
-                      placeholder="Definir comandante..."
-                      onPick={(c) => setCommander(c)}
-                    />
+                    <CardAutocomplete token={token} placeholder="Definir comandante..." onPick={(c) => setCommander(c)} />
                   </div>
                 </div>
 
                 {view === "VISUAL" ? (
                   <div className="deck-cards-visual">
                     {cards.length === 0 ? (
-                      <div className="muted">
-                        Adicione cartas pela pesquisa no painel direito.
-                      </div>
+                      <div className="muted">Adicione cartas pela pesquisa no painel direito.</div>
                     ) : (
                       <div className="deck-cards-row">
                         {cards.slice(0, 24).map((c) => (
@@ -254,11 +269,7 @@ export default function DeckBuilder() {
                             onClick={() => removeCard(c.id)}
                             title="Remover 1"
                           >
-                            {c.image ? (
-                              <img src={c.image} alt={c.name} />
-                            ) : (
-                              <div className="slot-text">{c.name}</div>
-                            )}
+                            {c.image ? <img src={c.image} alt={c.name} /> : <div className="slot-text">{c.name}</div>}
                             <div className="qty-badge">{c.qty}x</div>
                           </button>
                         ))}
@@ -269,11 +280,7 @@ export default function DeckBuilder() {
                   <div className="deck-cards-list">
                     <div className="list-box">
                       <div style={{ marginBottom: 10 }}>
-                        {commander ? (
-                          <div>1 {commander.name}</div>
-                        ) : (
-                          <div className="muted">1 Comandante</div>
-                        )}
+                        {commander ? <div>1 {commander.name}</div> : <div className="muted">1 Comandante</div>}
                       </div>
 
                       {cards.length === 0 ? (
@@ -284,16 +291,8 @@ export default function DeckBuilder() {
                           .sort((a, b) => a.name.localeCompare(b.name))
                           .map((c) => (
                             <div key={c.id} className="list-row">
-                              <span>
-                                {c.qty} {c.name}
-                              </span>
-                              <button
-                                type="button"
-                                className="btn btn-ghost"
-                                onClick={() => removeCard(c.id)}
-                              >
-                                −
-                              </button>
+                              <span>{c.qty} {c.name}</span>
+                              <button type="button" className="btn btn-ghost" onClick={() => removeCard(c.id)}>−</button>
                             </div>
                           ))
                       )}
@@ -328,7 +327,7 @@ export default function DeckBuilder() {
                       ))}
                     </datalist>
 
-                    <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
+                    <div style={{ display: "flex", gap: 10, marginTop: 10, flexWrap: "wrap" }}>
                       <button
                         type="button"
                         className="btn"
@@ -349,6 +348,17 @@ export default function DeckBuilder() {
                       >
                         Limpar
                       </button>
+
+                      {/* ✅ NOVO BOTÃO */}
+                      <button
+                        type="button"
+                        className="btn"
+                        onClick={setPreconFromChosenSet}
+                        disabled={preconLoading || !setCode.trim()}
+                        title="Importa como deck (1x cada carta)"
+                      >
+                        {preconLoading ? "Setando..." : "Set Precon"}
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -366,13 +376,9 @@ export default function DeckBuilder() {
 
                 <div className="deck-results-grid">
                   {searchLoading ? (
-                    <div className="muted" style={{ marginTop: 10 }}>
-                      Carregando...
-                    </div>
+                    <div className="muted" style={{ marginTop: 10 }}>Carregando...</div>
                   ) : searchQ.trim() && searchResults.length === 0 ? (
-                    <div className="muted" style={{ marginTop: 10 }}>
-                      Sem resultados
-                    </div>
+                    <div className="muted" style={{ marginTop: 10 }}>Sem resultados</div>
                   ) : (
                     searchResults.map((c) => (
                       <button
@@ -386,11 +392,7 @@ export default function DeckBuilder() {
                         title="Clique para adicionar"
                       >
                         <div className="deck-result-img">
-                          {c.image ? (
-                            <img src={c.image} alt={c.name} />
-                          ) : (
-                            <div className="slot-text">{c.name}</div>
-                          )}
+                          {c.image ? <img src={c.image} alt={c.name} /> : <div className="slot-text">{c.name}</div>}
                         </div>
 
                         <div className="deck-result-meta">
@@ -421,10 +423,7 @@ export default function DeckBuilder() {
       </div>
 
       {previewCard?.image && (
-        <div
-          className="card-preview"
-          style={{ left: previewPos.x, top: previewPos.y }}
-        >
+        <div className="card-preview" style={{ left: previewPos.x, top: previewPos.y }}>
           <img src={previewCard.image} alt={previewCard.name} />
         </div>
       )}

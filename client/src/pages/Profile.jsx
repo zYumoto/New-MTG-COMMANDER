@@ -11,6 +11,22 @@ export default function Profile() {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editOpen, setEditOpen] = useState(false);
+  const [myDecks, setMyDecks] = useState([]);
+
+  async function loadMyDecks() {
+    try {
+      const data = await apiGet("/api/decks/me", token);
+      setMyDecks(data.decks || []);
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  useEffect(() => {
+    loadMe();
+    loadMyDecks();
+  }, []);
+
 
   const bgStyle = useMemo(() => {
     const bg = profile?.profileBgUrl?.trim();
@@ -32,7 +48,6 @@ export default function Profile() {
 
   useEffect(() => {
     loadMe();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function saveProfile(payload) {
@@ -91,6 +106,22 @@ export default function Profile() {
                   Editar perfil
                 </button>
               </div>
+            </div>
+
+            <div className="profile-decks-box">
+              {loading ? (
+                <div style={{ opacity: 0.8 }}>Carregando...</div>
+              ) : myDecks.length === 0 ? (
+                <div style={{ opacity: 0.8 }}>Você ainda não salvou decks.</div>
+              ) : (
+                <div style={{ display: "grid", gap: 10 }}>
+                  {myDecks.map((d) => (
+                    <div key={d._id} className="list-row">
+                      <span>{d.name} — Cmd: {d.commander?.name}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="profile-decks">

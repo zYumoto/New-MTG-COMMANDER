@@ -1314,3 +1314,9 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+.btn-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}

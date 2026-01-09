@@ -38,6 +38,10 @@ export default function DeckBuilder() {
   // Precon
   const [preconLoading, setPreconLoading] = useState(false);
 
+  const [deckSearch, setDeckSearch] = useState("");
+  const [typeFilters, setTypeFilters] = useState({});
+
+
   const totalCards = useMemo(
     () => cards.reduce((s, c) => s + (c.qty || 0), 0),
     [cards]
@@ -192,6 +196,50 @@ export default function DeckBuilder() {
     }
   }
 
+  function getTypeBucket(typeLine = "") {
+    const t = typeLine.toLowerCase();
+
+    if (t.includes("land")) return "Land";
+    if (t.includes("creature")) return "Creature";
+    if (t.includes("instant")) return "Instant";
+    if (t.includes("sorcery")) return "Sorcery";
+    if (t.includes("artifact")) return "Artifact";
+    if (t.includes("enchantment")) return "Enchantment";
+    if (t.includes("planeswalker")) return "Planeswalker";
+    if (t.includes("battle")) return "Battle";
+    return "Other";
+  }
+
+  const typeCounts = useMemo(() => {
+    const counts = {};
+    for (const c of cards) {
+      const bucket = getTypeBucket(c.type_line);
+      counts[bucket] = (counts[bucket] || 0) + (c.qty || 1);
+    }
+    return counts;
+  }, [cards]);
+
+  const anyTypeChecked = useMemo(() => {
+    return Object.values(typeFilters).some(Boolean);
+  }, [typeFilters]);
+
+  // cartas do deck filtradas por texto + tipos marcados
+  const filteredDeckCards = useMemo(() => {
+    const q = deckSearch.trim().toLowerCase();
+
+    return cards.filter((c) => {
+      const matchesText =
+        !q ||
+        String(c.name || "").toLowerCase().includes(q);
+
+      const bucket = getTypeBucket(c.type_line);
+      const matchesType = !anyTypeChecked || !!typeFilters[bucket];
+
+      return matchesText && matchesType;
+    });
+  }, [cards, deckSearch, typeFilters, anyTypeChecked]);
+
+
   return (
     <div className="page-shell">
       <div className="lobby-shell">
@@ -251,23 +299,80 @@ export default function DeckBuilder() {
                   </div>
 
                   <div className="deck-slot-actions">
-                    <CardAutocomplete token={token} placeholder="Definir comandante..." onPick={(c) => setCommander(c)} />
+                    <CardAutocomplete
+                      token={token}
+                      placeholder="Definir comandante..."
+                      onPick={(c) => setCommander(c)}
+                    />
+
+                    {/* 🔎 Pesquisa no deck */}
+                    <div style={{ marginTop: 12 }}>
+                      <div className="small-muted" style={{ marginBottom: 6 }}>Pesquisar no deck</div>
+                      <input
+                        className="input"
+                        placeholder="ex: Sol Ring, Counterspell..."
+                        value={deckSearch}
+                        onChange={(e) => setDeckSearch(e.target.value)}
+                      />
+                    </div>
+
+                    {/* ✅ Filtros por tipo (apenas os que existem) */}
+                    <div style={{ marginTop: 12 }}>
+                      <div className="small-muted" style={{ marginBottom: 6 }}>Filtrar por tipo</div>
+
+                      <div className="type-filters">
+                        {Object.entries(typeCounts).map(([type, count]) => (
+                          <label key={type} className="type-filter-item">
+                            <input
+                              type="checkbox"
+                              checked={!!typeFilters[type]}
+                              onChange={(e) =>
+                                setTypeFilters((prev) => ({ ...prev, [type]: e.target.checked }))
+                              }
+                            />
+                            <span>{count} {type}{count > 1 ? "s" : ""}</span>
+                          </label>
+                        ))}
+                      </div>
+
+                      <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
+                        <button
+                          type="button"
+                          className="btn btn-ghost"
+                          onClick={() => setTypeFilters({})}
+                        >
+                          Limpar filtros
+                        </button>
+
+                        <button
+                          type="button"
+                          className="btn btn-ghost"
+                          onClick={() => setDeckSearch("")}
+                        >
+                          Limpar busca
+                        </button>
+                      </div>
+                    </div>
                   </div>
+
                 </div>
 
                 {view === "VISUAL" ? (
                   <div className="deck-cards-visual">
-                    {cards.length === 0 ? (
-                      <div className="muted">Adicione cartas pela pesquisa no painel direito.</div>
+                    {filteredDeckCards.length === 0 ? (
+                      <div className="muted">Nenhuma carta com esse filtro.</div>
                     ) : (
-                      <div className="deck-cards-row">
-                        {cards.slice(0, 24).map((c) => (
+                      <div className="deck-cards-row deck-cards-scroll">
+                        {filteredDeckCards.map((c) => (
                           <button
                             key={c.id}
                             type="button"
                             className="card-slot"
                             onClick={() => removeCard(c.id)}
                             title="Remover 1"
+                            onMouseEnter={(e) => handleCardEnter(c, e)}
+                            onMouseMove={(e) => handleCardEnter(c, e)}
+                            onMouseLeave={handleCardLeave}
                           >
                             {c.image ? <img src={c.image} alt={c.name} /> : <div className="slot-text">{c.name}</div>}
                             <div className="qty-badge">{c.qty}x</div>
@@ -278,15 +383,15 @@ export default function DeckBuilder() {
                   </div>
                 ) : (
                   <div className="deck-cards-list">
-                    <div className="list-box">
+                    <div className="list-box deck-cards-scroll">
                       <div style={{ marginBottom: 10 }}>
                         {commander ? <div>1 {commander.name}</div> : <div className="muted">1 Comandante</div>}
                       </div>
 
-                      {cards.length === 0 ? (
-                        <div className="muted">Nenhuma carta adicionada.</div>
+                      {filteredDeckCards.length === 0 ? (
+                        <div className="muted">Nenhuma carta com esse filtro.</div>
                       ) : (
-                        cards
+                        filteredDeckCards
                           .slice()
                           .sort((a, b) => a.name.localeCompare(b.name))
                           .map((c) => (
@@ -299,6 +404,7 @@ export default function DeckBuilder() {
                     </div>
                   </div>
                 )}
+
               </div>
             </section>
 

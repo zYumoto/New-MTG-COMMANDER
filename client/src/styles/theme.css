@@ -1242,3 +1242,32 @@ body {
 .deck-result-card * {
   user-select: none;
 }
+
+/* ===============================
+   CARD PREVIEW (HOVER FLUTUANTE)
+   =============================== */
+
+.card-preview {
+  position: fixed;
+  pointer-events: none; /* não interfere no mouse */
+  z-index: 9999;
+
+  width: 250px;
+  aspect-ratio: 63 / 88;
+
+  border-radius: 18px;
+  overflow: hidden;
+
+  background: rgba(10, 10, 20, 0.95);
+  border: 1px solid rgba(150, 130, 255, 0.25);
+  box-shadow: 0 0 40px rgba(31, 209, 255, 0.25);
+
+  transform: translateY(-50%);
+}
+
+.card-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}

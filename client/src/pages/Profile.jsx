@@ -46,10 +46,6 @@ export default function Profile() {
     }
   }
 
-  useEffect(() => {
-    loadMe();
-  }, []);
-
   async function saveProfile(payload) {
     try {
       const data = await apiPut("/api/users/me", payload, token);
